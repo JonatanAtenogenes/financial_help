@@ -41,6 +41,17 @@ const ExpensesScreen = () => {
     navigation.navigate("EditarGasto", { expense }); // Pass the selected expense to the update screen
   };
 
+  // Function to delete an expense
+  const deleteExpense = (id) => {
+    const updatedExpenses = expenses.filter((expense) => expense.id !== id);
+    setExpenses(updatedExpenses);
+    setFilteredExpenses(
+      selectedType
+        ? updatedExpenses.filter((expense) => expense.type === selectedType)
+        : updatedExpenses
+    );
+  };
+
   // Function to filter expenses by type
   const filterByType = (type) => {
     if (type === "Todos los gastos") {
@@ -66,13 +77,23 @@ const ExpensesScreen = () => {
 
   // Function to render the list of expenses
   const renderExpenseItem = ({ item }) => (
-    <TouchableOpacity onPress={() => navigateToUpdateExpense(item)}>
-      <View style={styles.expenseItem}>
+    <View style={styles.expenseItem}>
+      <TouchableOpacity
+        onPress={() => navigateToUpdateExpense(item)}
+        style={styles.expenseDetails}
+      >
         <Text style={styles.expenseName}>{item.type}</Text>
         <Text style={styles.expenseAmount}>${item.amount}</Text>
         <Text style={styles.expenseDate}>{item.date}</Text>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+      {/* Delete button */}
+      <TouchableOpacity
+        onPress={() => deleteExpense(item.id)}
+        style={styles.deleteButton}
+      >
+        <Ionicons name="trash-outline" size={24} color={colors.error} />
+      </TouchableOpacity>
+    </View>
   );
 
   // Data for the monthly expense chart
@@ -116,6 +137,11 @@ const ExpensesScreen = () => {
           labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
           style: {
             borderRadius: 16,
+          },
+          propsForDots: {
+            r: "6",
+            strokeWidth: "2",
+            stroke: colors.background,
           },
         }}
         style={{
@@ -193,9 +219,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   expenseItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 15,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  expenseDetails: {
+    flex: 1,
   },
   expenseName: {
     fontSize: 18,
@@ -209,6 +241,10 @@ const styles = StyleSheet.create({
   expenseDate: {
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  deleteButton: {
+    marginLeft: 10,
+    padding: 5,
   },
 });
 

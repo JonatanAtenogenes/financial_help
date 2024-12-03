@@ -74,7 +74,6 @@ const Register = ({ setIsLogin }) => {
         createdAt: new Date(), // Store registration timestamp
       });
 
-      Alert.alert("Registro exitoso", "Te has registrado correctamente.");
       setIsLogin(true); // Switch to login view after successful registration
     } catch (error) {
       Alert.alert(

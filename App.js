@@ -1,7 +1,7 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet } from "react-native";
 import WelcomeScreen from "./src/screen/WelcomeScreen";
 import { useEffect, useState } from "react";
 import { app } from "./src/utils/firebase";
@@ -9,7 +9,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import DashboardScreen from "./src/screen/DashboardScreen";
 import SettingsScreen from "./src/screen/SettingsScreen";
 import ExpensesScreen from "./src/screen/ExpensesScreen";
-import IncomeScreen from "./src/screen/IncomeScreen"; // Import the new screen
+import IncomeScreen from "./src/screen/IncomeScreen";
 
 // Import icons from react-native-vector-icons
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -18,6 +18,8 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import colors from "./src/utils/colors";
 import CreateExpenseScreen from "./src/screen/Expenses/CreateExpenseScreen";
 import EditExpenseScreen from "./src/screen/Expenses/EditExpenseScreen";
+import CreateIncomeScreen from "./src/screen/Income/CreateIncomeScreen";
+import EditIncomeScreen from "./src/screen/Income/EditIncomeScreen";
 
 // Crear un Stack para las pantallas dentro de Expenses
 const Stack = createNativeStackNavigator();
@@ -40,6 +42,28 @@ const ExpensesStack = () => {
         name="EditarGasto"
         component={EditExpenseScreen}
         options={{ title: "Editar Gasto", headerShown: false }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+const IncomeStack = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="ListaIngresos"
+        component={IncomeScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="CrearIngreso"
+        component={CreateIncomeScreen}
+        options={{ title: "Crear Ingreso", headerShown: false }}
+      />
+      <Stack.Screen
+        name="EditarIngreso"
+        component={EditIncomeScreen}
+        options={{ title: "Editar Ingreso", headerShown: false }}
       />
     </Stack.Navigator>
   );
@@ -73,11 +97,11 @@ const BottomTabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Ingresos" // Spanish title for "Income"
-        component={IncomeScreen} // Add the Income Screen
+        name="Ingresos"
+        component={IncomeStack} // Cambia IncomeScreen por IncomeStack
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cash" color={color} size={size} /> // Icon for income
+            <Ionicons name="cash" color={color} size={size} />
           ),
         }}
       />

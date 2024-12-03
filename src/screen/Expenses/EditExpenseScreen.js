@@ -12,28 +12,6 @@ const EditExpenseScreen = ({ route, navigation }) => {
     navigation.goBack();
   };
 
-  const handleDeleteExpense = () => {
-    // Lógica para eliminar el gasto
-    Alert.alert(
-      "Confirmar eliminación",
-      "¿Estás seguro de que deseas eliminar este gasto?",
-      [
-        {
-          text: "Cancelar",
-          style: "cancel",
-        },
-        {
-          text: "Eliminar",
-          onPress: () => {
-            console.log("Gasto eliminado");
-            // Aquí se debería realizar la eliminación (e.g., API call)
-            navigation.goBack();
-          },
-        },
-      ]
-    );
-  };
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Actualizar Gasto</Text>
@@ -42,13 +20,6 @@ const EditExpenseScreen = ({ route, navigation }) => {
         onSubmit={handleUpdateExpense}
         isUpdate={true}
       />
-
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={handleDeleteExpense}
-      >
-        <Text style={styles.buttonText}>Eliminar Gasto</Text>
-      </TouchableOpacity>
     </View>
   );
 };

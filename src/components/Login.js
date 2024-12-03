@@ -46,10 +46,6 @@ const Login = ({ setIsLogin }) => {
       .then((userCredential) => {
         // Signed in
         const user = userCredential.user;
-        Alert.alert(
-          "Inicio de sesión exitoso",
-          "Te has iniciado sesión correctamente."
-        );
       })
       .catch((error) => {
         const errorCode = error.code;
