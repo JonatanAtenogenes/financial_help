@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   ScrollView,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit"; // Import the library for charts
@@ -13,23 +14,13 @@ import { expenseTypes } from "../utils/expensesTypes"; // Expense types
 import colors from "../utils/colors"; // Colors for the app
 import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook
 import { fetchExpenses } from "../utils/firebaseUtils";
-
-// Fake data for expenses
-const initialExpenses = [
-  { id: "1", type: "Comida", amount: 150, date: "2024-12-01" },
-  { id: "2", type: "Transporte", amount: 50, date: "2024-12-02" },
-  { id: "3", type: "Entretenimiento", amount: 120, date: "2024-12-03" },
-  { id: "4", type: "Salud", amount: 200, date: "2024-12-04" },
-  { id: "5", type: "Vivienda", amount: 300, date: "2024-12-05" },
-  { id: "6", type: "Educación", amount: 100, date: "2024-12-06" },
-  { id: "7", type: "Ahorro", amount: 50, date: "2024-12-07" },
-  { id: "8", type: "Otros", amount: 80, date: "2024-12-08" },
-];
+import Chart from "../components/Chart";
 
 const ExpensesScreen = () => {
   const [expenses, setExpenses] = useState([]);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [selectedType, setSelectedType] = useState(null); // For tracking selected expense type
+  const [montlyExpenses, setMontlyExpenses] = useState([0, 0, 0, 0, 0, 0, 0]);
   const navigation = useNavigation(); // Initialize the navigation hook
 
   useEffect(() => {
@@ -45,6 +36,26 @@ const ExpensesScreen = () => {
 
     loadExpenses();
   }, []);
+
+  useEffect(() => {
+    try {
+      console.log("Data enviada: ", expenses);
+      const data = getWeeklyData(expenses);
+      console.log("Data recibida en exchange screen: ", data);
+      setMontlyExpenses(data);
+    } catch (e) {
+      console.log("No hay elementos");
+    }
+  }, [expenses]);
+
+  const expenseData = {
+    labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+    datasets: [
+      {
+        data: montlyExpenses, // Gastos
+      },
+    ],
+  };
 
   // Function to navigate to the Add Expense screen
   const navigateToAddExpense = () => {
@@ -137,33 +148,8 @@ const ExpensesScreen = () => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Monthly expense chart */}
-      <Text style={styles.sectionTitle}>Gastos por Mes</Text>
-      <LineChart
-        data={chartData}
-        width={350} // Adjust the size of the chart
-        height={220}
-        yAxisLabel="$"
-        chartConfig={{
-          backgroundColor: "#fff",
-          backgroundGradientFrom: "#fff",
-          backgroundGradientTo: "#fff",
-          decimalPlaces: 2,
-          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          style: {
-            borderRadius: 16,
-          },
-          propsForDots: {
-            r: "6",
-            strokeWidth: "2",
-            stroke: colors.background,
-          },
-        }}
-        style={{
-          marginVertical: 8,
-          borderRadius: 16,
-        }}
-      />
+      <Text style={styles.sectionTitle}>Gastos por Semana</Text>
+      <Chart data={expenseData} />
 
       {/* Button to add an expense */}
       <TouchableOpacity style={styles.addButton} onPress={navigateToAddExpense}>

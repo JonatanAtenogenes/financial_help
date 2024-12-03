@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit";
 import { useNavigation } from "@react-navigation/native";
 import colors from "../utils/colors";
 import { fetchIncome } from "../utils/firebaseUtils";
+import { getWeeklyData } from "../utils/dataUtils";
+import Chart from "../components/Chart";
 
 const initialIncomes = [
   { id: "1", type: "Salario", amount: 1000, date: "2024-12-01" },
@@ -21,7 +24,8 @@ const initialIncomes = [
 ];
 
 const IncomeScreen = () => {
-  const [incomes, setIncomes] = useState({});
+  const [incomes, setIncomes] = useState([]);
+  const [weeklyIncomes, setWeeklyIncomes] = useState([0, 0, 0, 0, 0, 0, 0, 0]);
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -35,6 +39,24 @@ const IncomeScreen = () => {
     };
     loadIncome();
   }, []);
+
+  useEffect(() => {
+    try {
+      const data = getWeeklyData(incomes);
+      setWeeklyIncomes(data);
+    } catch (e) {
+      console.log("No hay elementos");
+    }
+  }, [incomes]);
+
+  const incomeData = {
+    labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+    datasets: [
+      {
+        data: weeklyIncomes,
+      },
+    ],
+  };
 
   const navigateToAddIncome = () => {
     navigation.navigate("CrearIngreso");
@@ -90,34 +112,8 @@ const IncomeScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.sectionTitle}>Ingresos por Mes</Text>
-      <LineChart
-        data={chartData}
-        width={350}
-        height={220}
-        yAxisLabel="$"
-        chartConfig={{
-          backgroundColor: "#fff",
-          backgroundGradientFrom: "#fff",
-          backgroundGradientTo: "#fff",
-          decimalPlaces: 2,
-          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          style: {
-            borderRadius: 16,
-          },
-          propsForDots: {
-            r: "6",
-            strokeWidth: "2",
-            stroke: colors.background,
-          },
-        }}
-        style={{
-          marginVertical: 8,
-          borderRadius: 16,
-        }}
-      />
-
+      <Text style={styles.sectionTitle}>Ingresos por Semana</Text>
+      <Chart data={incomeData} />
       <TouchableOpacity style={styles.addButton} onPress={navigateToAddIncome}>
         <Text style={styles.addButtonText}>Agregar Ingreso</Text>
       </TouchableOpacity>

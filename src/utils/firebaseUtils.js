@@ -17,7 +17,7 @@ export const fetchExpenses = async () => {
     const querySnapshot = await getDocs(q);
     const fetchedExpenses = [];
     querySnapshot.forEach((doc) => {
-      fetchedExpenses.push(doc.data());
+      fetchedExpenses.push({ ...doc.data(), id: doc.id });
     });
 
     const totalExpenses = fetchedExpenses.reduce(
@@ -44,7 +44,7 @@ export const fetchIncome = async () => {
     const querySnapshot = await getDocs(q);
     const fetchedIncome = [];
     querySnapshot.forEach((doc) => {
-      fetchedIncome.push(doc.data());
+      fetchIncome.push({ ...doc.data(), id: doc.id });
     });
 
     const totalIncome = fetchedIncome.reduce(

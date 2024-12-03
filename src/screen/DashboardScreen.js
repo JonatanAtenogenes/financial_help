@@ -4,6 +4,7 @@ import { BarChart, LineChart } from "react-native-chart-kit";
 import colors from "../utils/colors"; // Importa los colores
 import { fetchExpenses, fetchIncome } from "../utils/firebaseUtils";
 import { getWeeklyData } from "../utils/dataUtils";
+import Chart from "../components/Chart";
 
 const DashboardScreen = () => {
   // Cálculo de dinero sobrante o faltante (Ejemplo)
@@ -91,57 +92,10 @@ const DashboardScreen = () => {
 
       {/* Gráfica de Ingresos */}
       <Text style={styles.chartTitle}>Ingresos</Text>
-      <LineChart
-        data={incomeData}
-        width={Dimensions.get("window").width - 40}
-        height={220}
-        yAxisLabel="$"
-        chartConfig={{
-          backgroundColor: colors.background,
-          backgroundGradientFrom: colors.surface,
-          backgroundGradientTo: colors.surface,
-          decimalPlaces: 2,
-          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          style: {
-            borderRadius: 16,
-          },
-          propsForDots: {
-            r: "6",
-            strokeWidth: "2",
-            stroke: colors.background,
-          },
-        }}
-        bezier
-        style={styles.chart}
-      />
-
+      <Chart data={incomeData} />
       {/* Gráfica de Gastos */}
       <Text style={styles.chartTitle}>Gastos</Text>
-      <BarChart
-        data={expenseData}
-        width={Dimensions.get("window").width - 40}
-        height={220}
-        yAxisLabel="$"
-        chartConfig={{
-          backgroundColor: colors.background,
-          backgroundGradientFrom: colors.surface,
-          backgroundGradientTo: colors.surface,
-          decimalPlaces: 2,
-          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          style: {
-            borderRadius: 16,
-          },
-          propsForDots: {
-            r: "6",
-            strokeWidth: "2",
-            stroke: colors.background,
-          },
-        }}
-        bezier
-        style={styles.chart}
-      />
+      <Chart data={expenseData} />
     </View>
   );
 };
@@ -160,10 +114,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginVertical: 10,
-  },
-  chart: {
-    marginVertical: 10,
-    borderRadius: 16,
   },
   balanceText: {
     fontSize: 20,
