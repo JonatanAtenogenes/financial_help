@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { LineChart } from "react-native-chart-kit"; // Import the library for ch
 import { expenseTypes } from "../utils/expensesTypes"; // Expense types
 import colors from "../utils/colors"; // Colors for the app
 import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook
+import { fetchExpenses } from "../utils/firebaseUtils";
 
 // Fake data for expenses
 const initialExpenses = [
@@ -26,10 +27,24 @@ const initialExpenses = [
 ];
 
 const ExpensesScreen = () => {
-  const [expenses, setExpenses] = useState(initialExpenses);
-  const [filteredExpenses, setFilteredExpenses] = useState(initialExpenses);
+  const [expenses, setExpenses] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [selectedType, setSelectedType] = useState(null); // For tracking selected expense type
   const navigation = useNavigation(); // Initialize the navigation hook
+
+  useEffect(() => {
+    const loadExpenses = async () => {
+      try {
+        const result = await fetchExpenses();
+        setExpenses(result.data);
+        setFilteredExpenses(result.data); // Set expenses data and total
+      } catch (error) {
+        console.error("Failed to load expenses:", error);
+      }
+    };
+
+    loadExpenses();
+  }, []);
 
   // Function to navigate to the Add Expense screen
   const navigateToAddExpense = () => {
@@ -77,7 +92,7 @@ const ExpensesScreen = () => {
 
   // Function to render the list of expenses
   const renderExpenseItem = ({ item }) => (
-    <View style={styles.expenseItem}>
+    <View style={styles.expenseItem} key={item.id}>
       <TouchableOpacity
         onPress={() => navigateToUpdateExpense(item)}
         style={styles.expenseDetails}

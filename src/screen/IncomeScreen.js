@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LineChart } from "react-native-chart-kit";
 import { useNavigation } from "@react-navigation/native";
 import colors from "../utils/colors";
+import { fetchIncome } from "../utils/firebaseUtils";
 
 const initialIncomes = [
   { id: "1", type: "Salario", amount: 1000, date: "2024-12-01" },
@@ -20,8 +21,20 @@ const initialIncomes = [
 ];
 
 const IncomeScreen = () => {
-  const [incomes, setIncomes] = useState(initialIncomes);
+  const [incomes, setIncomes] = useState({});
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const loadIncome = async () => {
+      try {
+        const result = await fetchIncome();
+        setIncomes(result.data); // Set income data and total
+      } catch (error) {
+        console.error("Failed to load incomes:", error);
+      }
+    };
+    loadIncome();
+  }, []);
 
   const navigateToAddIncome = () => {
     navigation.navigate("CrearIngreso");

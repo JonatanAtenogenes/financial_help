@@ -1,66 +1,81 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
-import { LineChart, BarChart } from "react-native-chart-kit";
+import { BarChart, LineChart } from "react-native-chart-kit";
 import colors from "../utils/colors"; // Importa los colores
-import { getAuth } from "firebase/auth";
-import {
-  query,
-  collection,
-  where,
-  getDocs,
-  getFirestore,
-} from "firebase/firestore";
-import { app } from "../utils/firebase";
-
-// Datos de ejemplo (deberán ser cargados desde Firebase en el futuro)
-const expenseData = {
-  labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
-  datasets: [
-    {
-      data: [200, 450, 300, 400, 500, 600], // Gastos
-    },
-  ],
-};
-
-const incomeData = {
-  labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
-  datasets: [
-    {
-      data: [300, 550, 400, 700, 750, 900], // Ingresos
-    },
-  ],
-};
+import { fetchExpenses, fetchIncome } from "../utils/firebaseUtils";
+import { getWeeklyData } from "../utils/dataUtils";
 
 const DashboardScreen = () => {
   // Cálculo de dinero sobrante o faltante (Ejemplo)
-  const totalIncome = 3200; // Ingresos totales
-  const totalExpense = 2200; // Gastos totales
-  const balance = totalIncome - totalExpense; // Dinero sobrante o faltante
-
-  const fetchExpenses = async () => {
-    try {
-      // Query the 'gastos' collection
-      const db = getFirestore(app);
-      const q = query(
-        collection(db, "gastos"),
-        where("user_id", "==", getAuth().currentUser.uid)
-      );
-
-      // Fetch the documents
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        console.log(doc.id, " => ", doc.data());
-      });
-    } catch (error) {
-      console.error("Error fetching expenses:", error);
-    }
-  };
+  const [income, setIncome] = useState({}); // Ingresos totales
+  const [expense, setExpense] = useState({});
+  const [balance, setBalance] = useState(0);
+  const [weeklyExpenses, setWeeklyExpenses] = useState([0, 0, 0, 0, 0, 0, 0]);
+  const [weeklyIncomes, setWeeklyIncomes] = useState([0, 0, 0, 0, 0, 0, 0]);
 
   useEffect(() => {
-    // Define an async function
+    const loadExpenses = async () => {
+      try {
+        const result = await fetchExpenses();
+        setExpense(result); // Set expenses data and total
+      } catch (error) {
+        console.error("Failed to load expenses:", error);
+      }
+    };
 
-    fetchExpenses(); // Call the async function
+    const loadIncome = async () => {
+      try {
+        const result = await fetchIncome();
+        setIncome(result); // Set income data and total
+      } catch (error) {
+        console.error("Failed to load incomes:", error);
+      }
+    };
+
+    loadExpenses();
+    loadIncome();
   }, []); // Empty dependency array ensures it runs only once
+
+  useEffect(() => {
+    // Recalculate balance when expense data changes
+    setBalance(income.total - expense.total);
+  }, [income, expense]);
+
+  useEffect(() => {
+    try {
+      const data = getWeeklyData(income.data);
+      setWeeklyIncomes(data);
+    } catch (e) {
+      console.log("No hay elementos");
+    }
+  }, [income]);
+
+  useEffect(() => {
+    try {
+      const data = getWeeklyData(expense.data);
+      setWeeklyExpenses(data);
+    } catch (e) {
+      console.log("No hay elementos");
+    }
+  }, [expense]);
+
+  const expenseData = {
+    labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+    datasets: [
+      {
+        data: weeklyExpenses, // Gastos
+      },
+    ],
+  };
+
+  const incomeData = {
+    labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+    datasets: [
+      {
+        data: weeklyIncomes, // Gastos
+      },
+    ],
+  };
 
   return (
     <View style={styles.container}>
@@ -103,7 +118,7 @@ const DashboardScreen = () => {
 
       {/* Gráfica de Gastos */}
       <Text style={styles.chartTitle}>Gastos</Text>
-      <LineChart
+      <BarChart
         data={expenseData}
         width={Dimensions.get("window").width - 40}
         height={220}
