@@ -9,6 +9,9 @@ import {
 } from "react-native";
 import colors from "../utils/colors"; // Import the colors object
 import { validateEmail } from "../utils/validations";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { app } from "../utils/firebase";
+import { doc, setDoc, getFirestore } from "firebase/firestore"; // Import Firestore functions
 
 const Register = ({ setIsLogin }) => {
   const [formData, setFormData] = useState({
@@ -27,7 +30,7 @@ const Register = ({ setIsLogin }) => {
   };
 
   // Handle form submission
-  const handleRegister = () => {
+  const handleRegister = async () => {
     if (
       !formData.name ||
       !formData.email ||
@@ -42,8 +45,44 @@ const Register = ({ setIsLogin }) => {
       Alert.alert("Error de validación", "El correo electrónico no es válido.");
       return;
     }
-    // Handle registration logic
-    Alert.alert("Registro exitoso", "Te has registrado con éxito.");
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      Alert.alert(
+        "Error de validación",
+        "La contraseña debe tener al menos 6 caracteres."
+      );
+      return;
+    }
+
+    try {
+      // Register user with Firebase Authentication
+      const auth = getAuth(app);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      const user = userCredential.user;
+
+      // Now store additional user data (excluding password) in Firestore
+      const db = getFirestore(app);
+      await setDoc(doc(db, "usuarios", user.uid), {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        createdAt: new Date(), // Store registration timestamp
+      });
+
+      Alert.alert("Registro exitoso", "Te has registrado correctamente.");
+      setIsLogin(true); // Switch to login view after successful registration
+    } catch (error) {
+      Alert.alert(
+        "Fallo al registrar usuario",
+        "No ha sido posible realizar el registro del usuario correctamente."
+      );
+      console.error(error.message);
+    }
   };
 
   return (
@@ -71,6 +110,7 @@ const Register = ({ setIsLogin }) => {
       <TextInput
         style={styles.input}
         placeholder="Teléfono"
+        keyboardType="number-pad"
         value={formData.phone}
         onChangeText={(value) => handleInputChange("phone", value)}
       />

@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import colors from "../utils/colors"; // Import the colors object
 import { validateEmail } from "../utils/validations";
+import { app } from "../utils/firebase";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
 
 const Login = ({ setIsLogin }) => {
   const [formData, setFormData] = useState({
@@ -38,11 +40,25 @@ const Login = ({ setIsLogin }) => {
       Alert.alert("Error de validación", "El correo electrónico no es válido.");
       return;
     }
-    // Handle login logic
-    Alert.alert(
-      "Inicio de sesión exitoso",
-      "Te has iniciado sesión correctamente."
-    );
+
+    const auth = getAuth(app);
+    signInWithEmailAndPassword(auth, formData.email, formData.password)
+      .then((userCredential) => {
+        // Signed in
+        const user = userCredential.user;
+        Alert.alert(
+          "Inicio de sesión exitoso",
+          "Te has iniciado sesión correctamente."
+        );
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        Alert.alert(
+          "Fallo al iniciar sesión",
+          "No ha sido posible iniciar sesión correctamente."
+        );
+      });
   };
 
   return (
