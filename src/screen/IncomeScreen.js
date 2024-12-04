@@ -7,10 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LineChart } from "react-native-chart-kit";
 import { useNavigation } from "@react-navigation/native";
 import colors from "../utils/colors";
 import { fetchIncome } from "../utils/firebaseUtils";

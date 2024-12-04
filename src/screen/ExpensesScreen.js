@@ -9,26 +9,24 @@ import {
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LineChart } from "react-native-chart-kit"; // Import the library for charts
-import { expenseTypes } from "../utils/expensesTypes"; // Expense types
-import colors from "../utils/colors"; // Colors for the app
-import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook
+import { expenseTypes } from "../utils/expensesTypes";
+import colors from "../utils/colors";
+import { useNavigation } from "@react-navigation/native";
 import { fetchExpenses } from "../utils/firebaseUtils";
 import Chart from "../components/Chart";
 
 const ExpensesScreen = () => {
   const [expenses, setExpenses] = useState([]);
   const [filteredExpenses, setFilteredExpenses] = useState([]);
-  const [selectedType, setSelectedType] = useState(null); // For tracking selected expense type
+  const [selectedType, setSelectedType] = useState(null);
   const [montlyExpenses, setMontlyExpenses] = useState([0, 0, 0, 0, 0, 0, 0]);
-  const navigation = useNavigation(); // Initialize the navigation hook
+  const navigation = useNavigation();
 
   useEffect(() => {
     const loadExpenses = async () => {
       try {
         const result = await fetchExpenses();
         setExpenses(result.data);
-        setFilteredExpenses(result.data); // Set expenses data and total
       } catch (error) {
         console.error("Failed to load expenses:", error);
       }
@@ -52,22 +50,19 @@ const ExpensesScreen = () => {
     labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
     datasets: [
       {
-        data: montlyExpenses, // Gastos
+        data: montlyExpenses,
       },
     ],
   };
 
-  // Function to navigate to the Add Expense screen
   const navigateToAddExpense = () => {
-    navigation.navigate("CrearGasto"); // Navigate to the 'CrearGasto' screen
+    navigation.navigate("CrearGasto");
   };
 
-  // Function to navigate to the Update Expense screen
   const navigateToUpdateExpense = (expense) => {
-    navigation.navigate("EditarGasto", { expense }); // Pass the selected expense to the update screen
+    navigation.navigate("EditarGasto", { expense });
   };
 
-  // Function to delete an expense
   const deleteExpense = (id) => {
     const updatedExpenses = expenses.filter((expense) => expense.id !== id);
     setExpenses(updatedExpenses);
@@ -78,11 +73,10 @@ const ExpensesScreen = () => {
     );
   };
 
-  // Function to filter expenses by type
   const filterByType = (type) => {
     if (type === "Todos los gastos") {
       setSelectedType(null);
-      setFilteredExpenses(expenses); // Show all expenses if no type is selected
+      setFilteredExpenses(expenses);
     } else {
       setSelectedType(type);
       const filtered = expenses.filter((expense) => expense.type === type);
@@ -90,7 +84,6 @@ const ExpensesScreen = () => {
     }
   };
 
-  // Function to render the expense types
   const renderExpenseTypes = ({ item }) => (
     <TouchableOpacity
       style={[styles.expenseTypeCard, { backgroundColor: item.color }]}
@@ -101,7 +94,6 @@ const ExpensesScreen = () => {
     </TouchableOpacity>
   );
 
-  // Function to render the list of expenses
   const renderExpenseItem = ({ item }) => (
     <View style={styles.expenseItem} key={item.id}>
       <TouchableOpacity
@@ -122,44 +114,16 @@ const ExpensesScreen = () => {
     </View>
   );
 
-  // Data for the monthly expense chart
-  const chartData = {
-    labels: [
-      "Ene",
-      "Feb",
-      "Mar",
-      "Abr",
-      "May",
-      "Jun",
-      "Jul",
-      "Ago",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dic",
-    ],
-    datasets: [
-      {
-        data: [120, 150, 130, 170, 190, 210, 250, 230, 210, 240, 220, 200], // Monthly expense data
-      },
-    ],
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Monthly expense chart */}
       <Text style={styles.sectionTitle}>Gastos por Semana</Text>
       <Chart data={expenseData} />
-
-      {/* Button to add an expense */}
       <TouchableOpacity style={styles.addButton} onPress={navigateToAddExpense}>
         <Text style={styles.addButtonText}>Agregar Gasto</Text>
       </TouchableOpacity>
-
-      {/* Expense Types */}
       <Text style={styles.sectionTitle}>Tipos de Gasto</Text>
       <FlatList
-        data={[...expenseTypes, { id: "999", name: "Todos los gastos" }]} // Add option to show all expenses
+        data={[...expenseTypes, { id: "999", name: "Todos los gastos" }]}
         renderItem={renderExpenseTypes}
         keyExtractor={(item) => item.id}
         horizontal
@@ -167,7 +131,6 @@ const ExpensesScreen = () => {
         style={styles.expenseTypesList}
       />
 
-      {/* List of filtered expenses */}
       <Text style={styles.sectionTitle}>Lista de Gastos</Text>
       <FlatList
         data={filteredExpenses}
@@ -182,7 +145,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     padding: 20,
-    paddingBottom: 50, // Extra space to prevent content cutoff
+    paddingBottom: 50,
   },
   sectionTitle: {
     fontSize: 24,
@@ -200,8 +163,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: 100,
-    minWidth: 100, // Ensure cards don't shrink below 100px
-    height: 120, // Fixed height for the cards
+    minWidth: 100,
+    height: 120,
   },
   expenseTypeText: {
     color: "white",
