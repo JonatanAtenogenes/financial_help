@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-import colors from "../utils/colors"; // Import the colors object
+import colors from "../utils/colors";
 import { validateEmail } from "../utils/validations";
 import { app } from "../utils/firebase";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
@@ -18,7 +18,6 @@ const Login = ({ setIsLogin }) => {
     password: "",
   });
 
-  // Handle input changes
   const handleInputChange = (name, value) => {
     setFormData({
       ...formData,
@@ -26,7 +25,6 @@ const Login = ({ setIsLogin }) => {
     });
   };
 
-  // Handle form submission
   const handleLogin = () => {
     if (!formData.email || !formData.password) {
       Alert.alert(

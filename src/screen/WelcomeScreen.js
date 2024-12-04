@@ -4,7 +4,7 @@ import Login from "../components/Login";
 import Register from "../components/Register";
 
 const WelcomeScreen = () => {
-  const [isLogin, setIsLogin] = useState(true); // Toggle between login and register
+  const [isLogin, setIsLogin] = useState(true);
 
   return (
     <View style={styles.container}>

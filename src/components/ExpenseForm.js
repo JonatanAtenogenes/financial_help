@@ -6,19 +6,16 @@ import {
   StyleSheet,
   TouchableOpacity,
 } from "react-native";
-import { expenseTypes } from "../utils/expensesTypes"; // Tipos de gastos
-import colors from "../utils/colors"; // Colores para la app
+import { expenseTypes } from "../utils/expensesTypes";
+import colors from "../utils/colors";
 import { Picker } from "@react-native-picker/picker";
 
-// Componente reutilizable para la creación y actualización de gastos
 const ExpenseForm = ({ expense, onSubmit, isUpdate }) => {
-  // Estado para los valores del formulario
   const [amount, setAmount] = useState(expense?.amount || "");
   const [category, setCategory] = useState(expense?.type || "");
   const [title, setTitle] = useState(expense?.title || "");
   const [description, setDescription] = useState(expense?.description || "");
 
-  // Al cargar un gasto para actualización, se establece el estado inicial
   useEffect(() => {
     if (expense) {
       setAmount(expense.amount);
@@ -28,9 +25,7 @@ const ExpenseForm = ({ expense, onSubmit, isUpdate }) => {
     }
   }, [expense]);
 
-  // Maneja el envío del formulario
   const handleSubmit = () => {
-    // Validamos que los datos no estén vacíos
     if (!amount || !category || !title) {
       alert("Por favor, complete todos los campos obligatorios.");
       return;
@@ -42,8 +37,6 @@ const ExpenseForm = ({ expense, onSubmit, isUpdate }) => {
       title,
       description,
     };
-
-    // Llamamos a la función onSubmit que se pasa como prop
     onSubmit(formData);
   };
 
@@ -86,8 +79,6 @@ const ExpenseForm = ({ expense, onSubmit, isUpdate }) => {
         placeholder="Ingrese una descripción"
         multiline
       />
-
-      {/* Replace Button with TouchableOpacity */}
       <TouchableOpacity
         style={[
           styles.button,
@@ -140,10 +131,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   createButton: {
-    backgroundColor: colors.primary, // Color for "Crear Gasto"
+    backgroundColor: colors.primary,
   },
   updateButton: {
-    backgroundColor: colors.secondary, // Color for "Actualizar Gasto"
+    backgroundColor: colors.secondary,
   },
   buttonText: {
     color: "white",

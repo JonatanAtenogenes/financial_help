@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,57 +6,107 @@ import {
   FlatList,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { LineChart } from "react-native-chart-kit"; // Import the library for charts
-import { expenseTypes } from "../utils/expensesTypes"; // Expense types
-import colors from "../utils/colors"; // Colors for the app
-import { useNavigation } from "@react-navigation/native"; // Import useNavigation hook
-
-// Fake data for expenses
-const initialExpenses = [
-  { id: "1", type: "Comida", amount: 150, date: "2024-12-01" },
-  { id: "2", type: "Transporte", amount: 50, date: "2024-12-02" },
-  { id: "3", type: "Entretenimiento", amount: 120, date: "2024-12-03" },
-  { id: "4", type: "Salud", amount: 200, date: "2024-12-04" },
-  { id: "5", type: "Vivienda", amount: 300, date: "2024-12-05" },
-  { id: "6", type: "Educación", amount: 100, date: "2024-12-06" },
-  { id: "7", type: "Ahorro", amount: 50, date: "2024-12-07" },
-  { id: "8", type: "Otros", amount: 80, date: "2024-12-08" },
-];
+import { expenseTypes } from "../utils/expensesTypes";
+import colors from "../utils/colors";
+import { useNavigation } from "@react-navigation/native";
+import {
+  deleteExpenseFromDatabase,
+  fetchExpenses,
+  subscribeToExpenses,
+} from "../utils/firebaseUtils";
+import Chart from "../components/Chart";
+import { getWeeklyData } from "../utils/dataUtils";
 
 const ExpensesScreen = () => {
-  const [expenses, setExpenses] = useState(initialExpenses);
-  const [filteredExpenses, setFilteredExpenses] = useState(initialExpenses);
-  const [selectedType, setSelectedType] = useState(null); // For tracking selected expense type
-  const navigation = useNavigation(); // Initialize the navigation hook
+  const [expenses, setExpenses] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
+  const [selectedType, setSelectedType] = useState(null);
+  const [montlyExpenses, setMontlyExpenses] = useState([0, 0, 0, 0, 0, 0, 0]);
+  const navigation = useNavigation();
 
-  // Function to navigate to the Add Expense screen
-  const navigateToAddExpense = () => {
-    navigation.navigate("CrearGasto"); // Navigate to the 'CrearGasto' screen
+  useEffect(() => {
+    const loadExpenses = async () => {
+      try {
+        const result = await fetchExpenses();
+        console.log("expenses: ", result);
+
+        setExpenses(result);
+      } catch (error) {
+        console.error("Failed to load expenses:", error);
+      }
+    };
+
+    loadExpenses();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToExpenses((newExpenses) => {
+      setExpenses(newExpenses);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    try {
+      console.warn("Data enviada: ", expenses);
+      const data = getWeeklyData(expenses);
+      console.log("Data recibida en exchange screen: ", data);
+      setMontlyExpenses(data);
+    } catch (e) {
+      console.log("No hay elementos");
+    }
+  }, [expenses]);
+
+  useEffect(() => {});
+
+  const expenseData = {
+    labels: ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"],
+    datasets: [
+      {
+        data: montlyExpenses,
+      },
+    ],
   };
 
-  // Function to navigate to the Update Expense screen
-  const navigateToUpdateExpense = (expense) => {
-    navigation.navigate("EditarGasto", { expense }); // Pass the selected expense to the update screen
-  };
-
-  // Function to delete an expense
-  const deleteExpense = (id) => {
-    const updatedExpenses = expenses.filter((expense) => expense.id !== id);
-    setExpenses(updatedExpenses);
-    setFilteredExpenses(
-      selectedType
-        ? updatedExpenses.filter((expense) => expense.type === selectedType)
-        : updatedExpenses
+  const deleteExchange = (id) => {
+    Alert.alert(
+      "Confirmar eliminación",
+      "¿Estás seguro de que deseas eliminar este gasto?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          onPress: async () => {
+            try {
+              await deleteExpenseFromDatabase(id);
+              setExpenses((prev) =>
+                prev.filter((exchange) => exchange.id !== id)
+              );
+              Alert.alert("Éxito", "Gasto eliminado correctamente.");
+            } catch (error) {
+              Alert.alert("Error", "Hubo un problema al eliminar el gasto.");
+            }
+          },
+        },
+      ]
     );
   };
 
-  // Function to filter expenses by type
+  const navigateToAddExpense = () => {
+    navigation.navigate("CrearGasto");
+  };
+
+  const navigateToUpdateExpense = (expense) => {
+    navigation.navigate("EditarGasto", { expense });
+  };
+
   const filterByType = (type) => {
     if (type === "Todos los gastos") {
       setSelectedType(null);
-      setFilteredExpenses(expenses); // Show all expenses if no type is selected
+      setFilteredExpenses(expenses);
     } else {
       setSelectedType(type);
       const filtered = expenses.filter((expense) => expense.type === type);
@@ -64,7 +114,10 @@ const ExpensesScreen = () => {
     }
   };
 
-  // Function to render the expense types
+  useEffect(() => {
+    filterByType("Todos los gastos");
+  }, [expenses]);
+
   const renderExpenseTypes = ({ item }) => (
     <TouchableOpacity
       style={[styles.expenseTypeCard, { backgroundColor: item.color }]}
@@ -75,9 +128,8 @@ const ExpensesScreen = () => {
     </TouchableOpacity>
   );
 
-  // Function to render the list of expenses
   const renderExpenseItem = ({ item }) => (
-    <View style={styles.expenseItem}>
+    <View style={styles.expenseItem} key={item.id}>
       <TouchableOpacity
         onPress={() => navigateToUpdateExpense(item)}
         style={styles.expenseDetails}
@@ -86,9 +138,8 @@ const ExpensesScreen = () => {
         <Text style={styles.expenseAmount}>${item.amount}</Text>
         <Text style={styles.expenseDate}>{item.date}</Text>
       </TouchableOpacity>
-      {/* Delete button */}
       <TouchableOpacity
-        onPress={() => deleteExpense(item.id)}
+        onPress={() => deleteExchange(item.id)}
         style={styles.deleteButton}
       >
         <Ionicons name="trash-outline" size={24} color={colors.error} />
@@ -96,69 +147,16 @@ const ExpensesScreen = () => {
     </View>
   );
 
-  // Data for the monthly expense chart
-  const chartData = {
-    labels: [
-      "Ene",
-      "Feb",
-      "Mar",
-      "Abr",
-      "May",
-      "Jun",
-      "Jul",
-      "Ago",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dic",
-    ],
-    datasets: [
-      {
-        data: [120, 150, 130, 170, 190, 210, 250, 230, 210, 240, 220, 200], // Monthly expense data
-      },
-    ],
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Monthly expense chart */}
-      <Text style={styles.sectionTitle}>Gastos por Mes</Text>
-      <LineChart
-        data={chartData}
-        width={350} // Adjust the size of the chart
-        height={220}
-        yAxisLabel="$"
-        chartConfig={{
-          backgroundColor: "#fff",
-          backgroundGradientFrom: "#fff",
-          backgroundGradientTo: "#fff",
-          decimalPlaces: 2,
-          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          style: {
-            borderRadius: 16,
-          },
-          propsForDots: {
-            r: "6",
-            strokeWidth: "2",
-            stroke: colors.background,
-          },
-        }}
-        style={{
-          marginVertical: 8,
-          borderRadius: 16,
-        }}
-      />
-
-      {/* Button to add an expense */}
+      <Text style={styles.sectionTitle}>Gastos por Semana</Text>
+      <Chart data={expenseData} />
       <TouchableOpacity style={styles.addButton} onPress={navigateToAddExpense}>
         <Text style={styles.addButtonText}>Agregar Gasto</Text>
       </TouchableOpacity>
-
-      {/* Expense Types */}
       <Text style={styles.sectionTitle}>Tipos de Gasto</Text>
       <FlatList
-        data={[...expenseTypes, { id: "999", name: "Todos los gastos" }]} // Add option to show all expenses
+        data={[...expenseTypes, { id: "999", name: "Todos los gastos" }]}
         renderItem={renderExpenseTypes}
         keyExtractor={(item) => item.id}
         horizontal
@@ -166,7 +164,6 @@ const ExpensesScreen = () => {
         style={styles.expenseTypesList}
       />
 
-      {/* List of filtered expenses */}
       <Text style={styles.sectionTitle}>Lista de Gastos</Text>
       <FlatList
         data={filteredExpenses}
@@ -181,7 +178,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     padding: 20,
-    paddingBottom: 50, // Extra space to prevent content cutoff
+    paddingBottom: 50,
   },
   sectionTitle: {
     fontSize: 24,
@@ -199,8 +196,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: 100,
-    minWidth: 100, // Ensure cards don't shrink below 100px
-    height: 120, // Fixed height for the cards
+    minWidth: 100,
+    height: 120,
   },
   expenseTypeText: {
     color: "white",
