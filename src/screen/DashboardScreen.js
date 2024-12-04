@@ -1,14 +1,17 @@
-import React, { useContext, useEffect, useState } from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
-import { BarChart, LineChart } from "react-native-chart-kit";
-import colors from "../utils/colors"; // Importa los colores
-import { fetchExpenses, fetchIncome } from "../utils/firebaseUtils";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import {
+  fetchExpenses,
+  fetchIncome,
+  subscribeToExpenses,
+  subscribeToIncome,
+} from "../utils/firebaseUtils";
 import { getWeeklyData } from "../utils/dataUtils";
 import Chart from "../components/Chart";
 
 const DashboardScreen = () => {
-  const [income, setIncome] = useState({}); // Ingresos totales
-  const [expense, setExpense] = useState({});
+  const [income, setIncome] = useState([]);
+  const [expense, setExpense] = useState([]);
   const [balance, setBalance] = useState(0);
   const [weeklyExpenses, setWeeklyExpenses] = useState([0, 0, 0, 0, 0, 0, 0]);
   const [weeklyIncomes, setWeeklyIncomes] = useState([0, 0, 0, 0, 0, 0, 0]);
@@ -23,26 +26,50 @@ const DashboardScreen = () => {
       }
     };
 
+    loadExpenses();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToExpenses((newExpenses) => {
+      setExpense(newExpenses);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const loadIncome = async () => {
       try {
         const result = await fetchIncome();
         setIncome(result);
       } catch (error) {
-        console.error("Failed to load incomes:", error);
+        console.error("Error al cargar ingresos:", error);
+        Alert.alert("Error", "No se pudieron cargar los ingresos.");
       }
     };
-
-    loadExpenses();
     loadIncome();
   }, []);
 
   useEffect(() => {
-    setBalance(income.total - expense.total);
+    const unsubscribe = subscribeToIncome((newIncomes) => {
+      setIncome(newIncomes);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const totalIncome = income.reduce((acc, income) => acc + income.amount, 0);
+    const totalExpenses = expense.reduce(
+      (acc, expense) => acc + expense.amount,
+      0
+    );
+    console.log(totalIncome);
+    setBalance(totalIncome - totalExpenses);
   }, [income, expense]);
 
   useEffect(() => {
     try {
-      const data = getWeeklyData(income.data);
+      const data = getWeeklyData(income);
       setWeeklyIncomes(data);
     } catch (e) {
       console.log("No hay elementos");
@@ -51,7 +78,7 @@ const DashboardScreen = () => {
 
   useEffect(() => {
     try {
-      const data = getWeeklyData(expense.data);
+      const data = getWeeklyData(expense);
       setWeeklyExpenses(data);
     } catch (e) {
       console.log("No hay elementos");
@@ -59,7 +86,7 @@ const DashboardScreen = () => {
   }, [expense]);
 
   const expenseData = {
-    labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+    labels: ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"],
     datasets: [
       {
         data: weeklyExpenses,
@@ -68,7 +95,7 @@ const DashboardScreen = () => {
   };
 
   const incomeData = {
-    labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+    labels: ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"],
     datasets: [
       {
         data: weeklyIncomes,

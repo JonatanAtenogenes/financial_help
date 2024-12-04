@@ -7,11 +7,11 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
-import colors from "../utils/colors"; // Import the colors object
+import colors from "../utils/colors";
 import { validateEmail } from "../utils/validations";
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { app } from "../utils/firebase";
-import { doc, setDoc, getFirestore } from "firebase/firestore"; // Import Firestore functions
+import { doc, setDoc, getFirestore } from "firebase/firestore";
 
 const Register = ({ setIsLogin }) => {
   const [formData, setFormData] = useState({
@@ -21,7 +21,6 @@ const Register = ({ setIsLogin }) => {
     phone: "",
   });
 
-  // Handle input changes
   const handleInputChange = (name, value) => {
     setFormData({
       ...formData,
@@ -29,7 +28,6 @@ const Register = ({ setIsLogin }) => {
     });
   };
 
-  // Handle form submission
   const handleRegister = async () => {
     if (
       !formData.name ||
@@ -46,7 +44,6 @@ const Register = ({ setIsLogin }) => {
       return;
     }
 
-    // Validate password length
     if (formData.password.length < 6) {
       Alert.alert(
         "Error de validación",
@@ -56,7 +53,6 @@ const Register = ({ setIsLogin }) => {
     }
 
     try {
-      // Register user with Firebase Authentication
       const auth = getAuth(app);
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -65,16 +61,15 @@ const Register = ({ setIsLogin }) => {
       );
       const user = userCredential.user;
 
-      // Now store additional user data (excluding password) in Firestore
       const db = getFirestore(app);
       await setDoc(doc(db, "usuarios", user.uid), {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        createdAt: new Date(), // Store registration timestamp
+        createdAt: new Date(),
       });
 
-      setIsLogin(true); // Switch to login view after successful registration
+      setIsLogin(true);
     } catch (error) {
       Alert.alert(
         "Fallo al registrar usuario",

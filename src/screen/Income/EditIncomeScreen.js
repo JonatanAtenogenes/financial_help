@@ -1,25 +1,24 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from "react-native";
-import { doc, updateDoc, deleteDoc, getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import IncomeForm from "../../components/IncomeForm"; // Importa el formulario
+import { View, Text, StyleSheet, Alert } from "react-native";
+import { doc, updateDoc, getFirestore } from "firebase/firestore";
+import IncomeForm from "../../components/IncomeForm";
 import { app } from "../../utils/firebase";
 
 const EditIncomeScreen = ({ navigation, route }) => {
-  const { income } = route.params; // Recibe los datos del ingreso a editar
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { income } = route.params;
+  console.warn("Actualizar income " + income);
 
   const handleUpdateIncome = async (incomeData) => {
     try {
       const db = getFirestore(app);
-      const incomeRef = doc(db, "ingresos", income.id); // Refiere al ingreso existente
+      const incomeRef = doc(db, "ingresos", income.id);
 
       await updateDoc(incomeRef, {
         amount: incomeData.amount,
         type: incomeData.type,
         title: incomeData.title,
         description: incomeData.description,
-        updated_at: new Date(), // Marca la fecha de actualización
+        updated_at: new Date(),
       });
 
       Alert.alert("Éxito", "Ingreso actualizado correctamente.");
@@ -28,35 +27,6 @@ const EditIncomeScreen = ({ navigation, route }) => {
       console.error("Error al actualizar el ingreso:", error);
       Alert.alert("Error", "Hubo un problema al actualizar el ingreso.");
     }
-  };
-
-  const handleDeleteIncome = async () => {
-    Alert.alert(
-      "Confirmar eliminación",
-      "¿Estás seguro de que deseas eliminar este ingreso?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          onPress: async () => {
-            setIsDeleting(true);
-            try {
-              const db = getFirestore(app);
-              const incomeRef = doc(db, "ingresos", income.id);
-
-              await deleteDoc(incomeRef);
-              Alert.alert("Éxito", "Ingreso eliminado correctamente.");
-              navigation.goBack();
-            } catch (error) {
-              console.error("Error al eliminar el ingreso:", error);
-              Alert.alert("Error", "No se pudo eliminar el ingreso.");
-            } finally {
-              setIsDeleting(false);
-            }
-          },
-        },
-      ]
-    );
   };
 
   return (

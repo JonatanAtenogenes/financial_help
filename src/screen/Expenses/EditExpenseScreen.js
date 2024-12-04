@@ -1,14 +1,30 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import ExpenseForm from "../../components/ExpenseForm"; // Importa el formulario
+import React from "react";
+import { View, Text, StyleSheet, Alert } from "react-native";
+import ExpenseForm from "../../components/ExpenseForm";
+import { doc, getFirestore, updateDoc } from "firebase/firestore";
+import { app } from "../../utils/firebase";
 
 const EditExpenseScreen = ({ route, navigation }) => {
-  const { expense } = route.params; // Recibe los datos del gasto a actualizar
+  const { expense } = route.params;
+  console.warn("Actualizar expense " + expense.id);
 
-  const handleUpdateExpense = (expenseData) => {
-    // Aquí se actualizan los datos en la base de datos
-    console.log("Actualizar Gasto:", expenseData);
-    // Navegar a otra pantalla o mostrar mensaje de éxito
+  const handleUpdateExpense = async (expenseData) => {
+    try {
+      const db = getFirestore(app);
+      const expenseRef = doc(db, "gastos", expense.id);
+
+      await updateDoc(expenseRef, {
+        amount: expenseData.amount,
+        type: expenseData.type,
+        title: expenseData.title,
+        description: expenseData.description,
+        updated_at: new Date(),
+      });
+      Alert.alert("Éxito", "Gasto actualizado correctamente.");
+      navigation.goBack();
+    } catch (e) {
+      Alert.alert("Error", "Hubo un problema al actualizar el Gasto.");
+    }
     navigation.goBack();
   };
 
@@ -37,7 +53,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     marginTop: 20,
     padding: 15,
-    backgroundColor: "red", // Red color for delete button
+    backgroundColor: "red",
     borderRadius: 5,
     alignItems: "center",
   },

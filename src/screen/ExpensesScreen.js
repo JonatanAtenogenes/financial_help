@@ -6,14 +6,19 @@ import {
   FlatList,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { expenseTypes } from "../utils/expensesTypes";
 import colors from "../utils/colors";
 import { useNavigation } from "@react-navigation/native";
-import { fetchExpenses } from "../utils/firebaseUtils";
+import {
+  deleteExpenseFromDatabase,
+  fetchExpenses,
+  subscribeToExpenses,
+} from "../utils/firebaseUtils";
 import Chart from "../components/Chart";
+import { getWeeklyData } from "../utils/dataUtils";
 
 const ExpensesScreen = () => {
   const [expenses, setExpenses] = useState([]);
@@ -26,7 +31,9 @@ const ExpensesScreen = () => {
     const loadExpenses = async () => {
       try {
         const result = await fetchExpenses();
-        setExpenses(result.data);
+        console.log("expenses: ", result);
+
+        setExpenses(result);
       } catch (error) {
         console.error("Failed to load expenses:", error);
       }
@@ -36,8 +43,15 @@ const ExpensesScreen = () => {
   }, []);
 
   useEffect(() => {
+    const unsubscribe = subscribeToExpenses((newExpenses) => {
+      setExpenses(newExpenses);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     try {
-      console.log("Data enviada: ", expenses);
+      console.warn("Data enviada: ", expenses);
       const data = getWeeklyData(expenses);
       console.log("Data recibida en exchange screen: ", data);
       setMontlyExpenses(data);
@@ -46,13 +60,39 @@ const ExpensesScreen = () => {
     }
   }, [expenses]);
 
+  useEffect(() => {});
+
   const expenseData = {
-    labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+    labels: ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"],
     datasets: [
       {
         data: montlyExpenses,
       },
     ],
+  };
+
+  const deleteExchange = (id) => {
+    Alert.alert(
+      "Confirmar eliminación",
+      "¿Estás seguro de que deseas eliminar este gasto?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          onPress: async () => {
+            try {
+              await deleteExpenseFromDatabase(id);
+              setExpenses((prev) =>
+                prev.filter((exchange) => exchange.id !== id)
+              );
+              Alert.alert("Éxito", "Gasto eliminado correctamente.");
+            } catch (error) {
+              Alert.alert("Error", "Hubo un problema al eliminar el gasto.");
+            }
+          },
+        },
+      ]
+    );
   };
 
   const navigateToAddExpense = () => {
@@ -61,16 +101,6 @@ const ExpensesScreen = () => {
 
   const navigateToUpdateExpense = (expense) => {
     navigation.navigate("EditarGasto", { expense });
-  };
-
-  const deleteExpense = (id) => {
-    const updatedExpenses = expenses.filter((expense) => expense.id !== id);
-    setExpenses(updatedExpenses);
-    setFilteredExpenses(
-      selectedType
-        ? updatedExpenses.filter((expense) => expense.type === selectedType)
-        : updatedExpenses
-    );
   };
 
   const filterByType = (type) => {
@@ -83,6 +113,10 @@ const ExpensesScreen = () => {
       setFilteredExpenses(filtered);
     }
   };
+
+  useEffect(() => {
+    filterByType("Todos los gastos");
+  }, [expenses]);
 
   const renderExpenseTypes = ({ item }) => (
     <TouchableOpacity
@@ -104,9 +138,8 @@ const ExpensesScreen = () => {
         <Text style={styles.expenseAmount}>${item.amount}</Text>
         <Text style={styles.expenseDate}>{item.date}</Text>
       </TouchableOpacity>
-      {/* Delete button */}
       <TouchableOpacity
-        onPress={() => deleteExpense(item.id)}
+        onPress={() => deleteExchange(item.id)}
         style={styles.deleteButton}
       >
         <Ionicons name="trash-outline" size={24} color={colors.error} />

@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
-import colors from "../utils/colors"; // Importa los colores
+import colors from "../utils/colors";
 
 const IncomeForm = ({ onSubmit, isUpdate = false, income = {} }) => {
   const [title, setTitle] = useState(income.title || "");
@@ -72,8 +72,8 @@ const styles = StyleSheet.create({
     padding: 10,
     marginVertical: 10,
     borderRadius: 5,
-    color: colors.textPrimary, // Texto principal
-    backgroundColor: colors.surface, // Fondo del campo
+    color: colors.textPrimary,
+    backgroundColor: colors.surface,
   },
   button: {
     paddingVertical: 15,
@@ -82,13 +82,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   createButton: {
-    backgroundColor: colors.primary, // Color for "Crear Gasto"
+    backgroundColor: colors.primary,
   },
   updateButton: {
-    backgroundColor: colors.secondary, // Color for "Actualizar Gasto"
+    backgroundColor: colors.secondary,
   },
   buttonText: {
-    color: colors.surface, // Texto del botón (blanco)
+    color: colors.surface,
     fontWeight: "bold",
     fontSize: 16,
   },

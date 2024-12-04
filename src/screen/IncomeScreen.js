@@ -14,12 +14,8 @@ import colors from "../utils/colors";
 import { fetchIncome } from "../utils/firebaseUtils";
 import { getWeeklyData } from "../utils/dataUtils";
 import Chart from "../components/Chart";
-
-const initialIncomes = [
-  { id: "1", type: "Salario", amount: 1000, date: "2024-12-01" },
-  { id: "2", type: "Freelance", amount: 500, date: "2024-12-02" },
-  { id: "3", type: "Inversiones", amount: 300, date: "2024-12-03" },
-];
+import { subscribeToIncome } from "../utils/firebaseUtils";
+import { deleteIncomeFromDatabase } from "../utils/firebaseUtils";
 
 const IncomeScreen = () => {
   const [incomes, setIncomes] = useState([]);
@@ -30,17 +26,27 @@ const IncomeScreen = () => {
     const loadIncome = async () => {
       try {
         const result = await fetchIncome();
-        setIncomes(result.data); // Set income data and total
+        setIncomes(result);
       } catch (error) {
-        console.error("Failed to load incomes:", error);
+        console.error("Error al cargar ingresos:", error);
+        Alert.alert("Error", "No se pudieron cargar los ingresos.");
       }
     };
     loadIncome();
   }, []);
 
   useEffect(() => {
+    const unsubscribe = subscribeToIncome((newIncomes) => {
+      setIncomes(newIncomes);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     try {
+      console.warn("data enviada en incomes: ", incomes);
       const data = getWeeklyData(incomes);
+      console.log("dataincome: ", data);
       setWeeklyIncomes(data);
     } catch (e) {
       console.log("No hay elementos");
@@ -48,7 +54,7 @@ const IncomeScreen = () => {
   }, [incomes]);
 
   const incomeData = {
-    labels: ["Lun", "Mar", "Mie", "Jue", "Vie", "Sab", "Dom"],
+    labels: ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"],
     datasets: [
       {
         data: weeklyIncomes,
@@ -72,8 +78,14 @@ const IncomeScreen = () => {
         { text: "Cancelar", style: "cancel" },
         {
           text: "Eliminar",
-          onPress: () => {
-            setIncomes((prev) => prev.filter((income) => income.id !== id));
+          onPress: async () => {
+            try {
+              await deleteIncomeFromDatabase(id);
+              setIncomes((prev) => prev.filter((income) => income.id !== id));
+              Alert.alert("Éxito", "Ingreso eliminado correctamente.");
+            } catch (error) {
+              Alert.alert("Error", "Hubo un problema al eliminar el ingreso.");
+            }
           },
         },
       ]
@@ -99,15 +111,6 @@ const IncomeScreen = () => {
     </View>
   );
 
-  const chartData = {
-    labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
-    datasets: [
-      {
-        data: [500, 700, 800, 900, 1100, 1200],
-      },
-    ],
-  };
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.sectionTitle}>Ingresos por Semana</Text>
@@ -130,7 +133,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.background,
     padding: 20,
-    paddingBottom: 50, // Espacio extra para evitar contenido cortado
+    paddingBottom: 50,
   },
   sectionTitle: {
     fontSize: 24,
@@ -148,9 +151,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: 100,
-    minWidth: 100, // Asegura que las tarjetas no se reduzcan más allá de 100px
-    height: 120, // Altura fija para las tarjetas
-    backgroundColor: colors.incomeCardBackground, // Color específico para ingresos
+    minWidth: 100,
+    height: 120,
+    backgroundColor: colors.incomeCardBackground,
   },
   incomeTypeText: {
     color: "white",
@@ -186,7 +189,7 @@ const styles = StyleSheet.create({
   },
   incomeAmount: {
     fontSize: 16,
-    color: colors.incomeText, // Color específico para el monto de ingresos
+    color: colors.incomeText,
   },
   incomeDate: {
     fontSize: 14,

@@ -2,13 +2,16 @@ import React from "react";
 import { View, Text, StyleSheet, Alert } from "react-native";
 import { doc, getFirestore, setDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import IncomeForm from "../../components/IncomeForm"; // Importa el formulario
+import IncomeForm from "../../components/IncomeForm";
 import { app } from "../../utils/firebase";
 
 const CreateIncomeScreen = ({ navigation }) => {
-  // Validar los datos del formulario
   const validateFormData = (incomeData) => {
-    if (!incomeData.amount || isNaN(incomeData.amount) || incomeData.amount <= 0) {
+    if (
+      !incomeData.amount ||
+      isNaN(incomeData.amount) ||
+      incomeData.amount <= 0
+    ) {
       Alert.alert("Error", "El monto debe ser un valor numérico válido.");
       return false;
     }
@@ -24,7 +27,6 @@ const CreateIncomeScreen = ({ navigation }) => {
   };
 
   const handleCreateIncome = async (incomeData) => {
-    // Validar los datos del formulario
     if (!validateFormData(incomeData)) return;
 
     try {
