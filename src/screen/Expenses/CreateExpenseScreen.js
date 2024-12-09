@@ -1,11 +1,28 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Alert } from "react-native";
 import { doc, getFirestore, setDoc } from "firebase/firestore";
 import ExpenseForm from "../../components/ExpenseForm";
 import { getAuth } from "firebase/auth";
 import { app } from "../../utils/firebase";
+import { fetchUserCategories } from "../../utils/firebaseUtils"; // Función para obtener las categorías del usuario
 
 const CreateExpenseScreen = ({ navigation }) => {
+  const [userCategories, setUserCategories] = useState([]);
+
+  // Cargar las categorías del usuario al montar el componente
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categories = await fetchUserCategories(); // Obtener categorías del usuario desde Firestore
+        setUserCategories(categories);
+      } catch (error) {
+        console.error("Error al cargar las categorías del usuario:", error);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
   const validateFormData = (expenseData) => {
     if (
       !expenseData.amount ||
@@ -57,7 +74,7 @@ const CreateExpenseScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Crear Gasto</Text>
-      <ExpenseForm onSubmit={handleCreateExpense} isUpdate={false} />
+      <ExpenseForm onSubmit={handleCreateExpense} userCategories={userCategories} />
     </View>
   );
 };

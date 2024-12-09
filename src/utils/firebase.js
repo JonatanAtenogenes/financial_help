@@ -4,14 +4,16 @@ import { initializeApp } from "firebase/app";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyASuHYOhep4AzWjg_wB_N2mRNf8s7_Ypuk",
-  authDomain: "financial-help-64dc4.firebaseapp.com",
-  projectId: "financial-help-64dc4",
-  storageBucket: "financial-help-64dc4.firebasestorage.app",
-  messagingSenderId: "922466593335",
-  appId: "1:922466593335:web:06051962fe5a64d0deadb2",
+  apiKey: "AIzaSyD0o_XkRempMhDnrZqWpTpebXw7cFBnnnk",
+  authDomain: "proyecto-financial.firebaseapp.com",
+  projectId: "proyecto-financial",
+  storageBucket: "proyecto-financial.firebasestorage.app",
+  messagingSenderId: "399038366723",
+  appId: "1:399038366723:web:b966b200b2fbf4882a7a36",
+  measurementId: "G-J8RKFVF8BM"
 };
 
 // Initialize Firebase
-export const app = initializeApp(firebaseConfig);
+const app = initializeApp(firebaseConfig);

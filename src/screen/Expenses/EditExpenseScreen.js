@@ -1,12 +1,26 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Alert } from "react-native";
 import ExpenseForm from "../../components/ExpenseForm";
 import { doc, getFirestore, updateDoc } from "firebase/firestore";
 import { app } from "../../utils/firebase";
+import { fetchUserCategories } from "../../utils/firebaseUtils";
 
 const EditExpenseScreen = ({ route, navigation }) => {
   const { expense } = route.params;
-  console.warn("Actualizar expense " + expense.id);
+  const [userCategories, setUserCategories] = useState([]);
+
+  useEffect(() => {
+    const loadUserCategories = async () => {
+      try {
+        const categories = await fetchUserCategories(); // Obtener las categorías de usuario
+        setUserCategories(categories);
+      } catch (error) {
+        console.error("Error al cargar las categorías de usuario:", error);
+      }
+    };
+
+    loadUserCategories();
+  }, []);
 
   const handleUpdateExpense = async (expenseData) => {
     try {
@@ -25,7 +39,6 @@ const EditExpenseScreen = ({ route, navigation }) => {
     } catch (e) {
       Alert.alert("Error", "Hubo un problema al actualizar el Gasto.");
     }
-    navigation.goBack();
   };
 
   return (
@@ -34,6 +47,7 @@ const EditExpenseScreen = ({ route, navigation }) => {
       <ExpenseForm
         expense={expense}
         onSubmit={handleUpdateExpense}
+        userCategories={userCategories} // Pasar las categorías de usuario al formulario
         isUpdate={true}
       />
     </View>
@@ -49,18 +63,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
-  },
-  deleteButton: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: "red",
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });
 

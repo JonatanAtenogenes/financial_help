@@ -16,8 +16,11 @@ import {
   deleteExpenseFromDatabase,
   fetchExpenses,
   subscribeToExpenses,
+  fetchUserCategories,
+  deleteUserCategory,
 } from "../utils/firebaseUtils";
 import Chart from "../components/Chart";
+import AddCategoryModal from "../components/AddCategoryModal";
 import { getWeeklyData } from "../utils/dataUtils";
 
 const ExpensesScreen = () => {
@@ -25,20 +28,19 @@ const ExpensesScreen = () => {
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [selectedType, setSelectedType] = useState(null);
   const [montlyExpenses, setMontlyExpenses] = useState([0, 0, 0, 0, 0, 0, 0]);
+  const [userCategories, setUserCategories] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const navigation = useNavigation();
 
   useEffect(() => {
     const loadExpenses = async () => {
       try {
         const result = await fetchExpenses();
-        console.log("expenses: ", result);
-
         setExpenses(result);
       } catch (error) {
         console.error("Failed to load expenses:", error);
       }
     };
-
     loadExpenses();
   }, []);
 
@@ -50,58 +52,39 @@ const ExpensesScreen = () => {
   }, []);
 
   useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categories = await fetchUserCategories();
+        setUserCategories(categories);
+      } catch (error) {
+        console.error("Error al cargar las categorías del usuario:", error);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  useEffect(() => {
     try {
-      console.warn("Data enviada: ", expenses);
       const data = getWeeklyData(expenses);
-      console.log("Data recibida en exchange screen: ", data);
       setMontlyExpenses(data);
     } catch (e) {
       console.log("No hay elementos");
     }
-  }, [expenses]);
+  }, [expenses]); 
 
-  useEffect(() => {});
 
-  const expenseData = {
-    labels: ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"],
-    datasets: [
-      {
-        data: montlyExpenses,
-      },
-    ],
+  const handleAddCategory = (newCategory) => {
+    setUserCategories((prev) => [...prev, newCategory]); // Agrega la categoría al estado
   };
+  
+  
 
-  const deleteExchange = (id) => {
-    Alert.alert(
-      "Confirmar eliminación",
-      "¿Estás seguro de que deseas eliminar este gasto?",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          onPress: async () => {
-            try {
-              await deleteExpenseFromDatabase(id);
-              setExpenses((prev) =>
-                prev.filter((exchange) => exchange.id !== id)
-              );
-              Alert.alert("Éxito", "Gasto eliminado correctamente.");
-            } catch (error) {
-              Alert.alert("Error", "Hubo un problema al eliminar el gasto.");
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const navigateToAddExpense = () => {
-    navigation.navigate("CrearGasto");
-  };
-
-  const navigateToUpdateExpense = (expense) => {
-    navigation.navigate("EditarGasto", { expense });
-  };
+  const combinedCategories = [
+    ...expenseTypes.filter((type) => type.name !== "Otros"), // Filtrar "Otros"
+    ...userCategories,
+    { id: "999", name: "Otros", color: "#95a5a6" }, // Añadir "Otros" como última tarjeta
+  ];
+  
 
   const filterByType = (type) => {
     if (type === "Todos los gastos") {
@@ -118,20 +101,54 @@ const ExpensesScreen = () => {
     filterByType("Todos los gastos");
   }, [expenses]);
 
-  const renderExpenseTypes = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.expenseTypeCard, { backgroundColor: item.color }]}
-      onPress={() => filterByType(item.name)}
-    >
-      {item.icon}
-      <Text style={styles.expenseTypeText}>{item.name}</Text>
-    </TouchableOpacity>
-  );
+  const renderExpenseTypes = ({ item }) => {
+    const isUserCategory = userCategories.some((cat) => cat.id === item.id);
+  
+    const handleDeleteCategory = async () => {
+      try {
+        Alert.alert(
+          "Confirmar eliminación",
+          `¿Estás seguro de que deseas eliminar la categoría "${item.name}"?`,
+          [
+            { text: "Cancelar", style: "cancel" },
+            {
+              text: "Eliminar",
+              onPress: async () => {
+                await deleteUserCategory(item.id); // Eliminar de Firestore
+                setUserCategories((prev) =>
+                  prev.filter((category) => category.id !== item.id)
+                ); // Actualizar el estado local
+                Alert.alert("Éxito", "Categoría eliminada correctamente.");
+              },
+            },
+          ]
+        );
+      } catch (error) {
+        Alert.alert("Error", "No se pudo eliminar la categoría.");
+      }
+    };
+  
+    return (
+      <TouchableOpacity
+        style={[styles.expenseTypeCard, { backgroundColor: item.color || "#95a5a6" }]}
+        onPress={() =>
+          item.name === "Otros" ? setIsModalVisible(true) : filterByType(item.name)
+        }
+        onLongPress={() => isUserCategory && handleDeleteCategory()} // Detectar pulsación larga
+      >
+        {item.icon || <Ionicons name="ios-add-circle-outline" size={24} color="white" />}
+        <Text style={styles.expenseTypeText}>
+          {item.name === "Otros" ? "Agregar Categoría" : item.name}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
+  
 
   const renderExpenseItem = ({ item }) => (
     <View style={styles.expenseItem} key={item.id}>
       <TouchableOpacity
-        onPress={() => navigateToUpdateExpense(item)}
+        onPress={() => navigation.navigate("EditarGasto", { expense: item })}
         style={styles.expenseDetails}
       >
         <Text style={styles.expenseName}>{item.type}</Text>
@@ -139,7 +156,7 @@ const ExpensesScreen = () => {
         <Text style={styles.expenseDate}>{item.date}</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        onPress={() => deleteExchange(item.id)}
+        onPress={() => deleteExpenseFromDatabase(item.id)}
         style={styles.deleteButton}
       >
         <Ionicons name="trash-outline" size={24} color={colors.error} />
@@ -147,23 +164,32 @@ const ExpensesScreen = () => {
     </View>
   );
 
+  const expenseData = {
+    labels: ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"],
+    datasets: [{ data: montlyExpenses }],
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <AddCategoryModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        onCategoryAdded={(newCategory) => handleAddCategory(newCategory)}
+      />
       <Text style={styles.sectionTitle}>Gastos por Semana</Text>
       <Chart data={expenseData} />
-      <TouchableOpacity style={styles.addButton} onPress={navigateToAddExpense}>
+      <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate("CrearGasto")}>
         <Text style={styles.addButtonText}>Agregar Gasto</Text>
       </TouchableOpacity>
       <Text style={styles.sectionTitle}>Tipos de Gasto</Text>
       <FlatList
-        data={[...expenseTypes, { id: "999", name: "Todos los gastos" }]}
+        data={combinedCategories}
         renderItem={renderExpenseTypes}
         keyExtractor={(item) => item.id}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.expenseTypesList}
       />
-
       <Text style={styles.sectionTitle}>Lista de Gastos</Text>
       <FlatList
         data={filteredExpenses}
@@ -208,7 +234,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     padding: 10,
     borderRadius: 5,
-    marginTop: 20,
   },
   addButtonText: {
     color: "white",

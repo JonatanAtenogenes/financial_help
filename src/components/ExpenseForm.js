@@ -10,11 +10,14 @@ import { expenseTypes } from "../utils/expensesTypes";
 import colors from "../utils/colors";
 import { Picker } from "@react-native-picker/picker";
 
-const ExpenseForm = ({ expense, onSubmit, isUpdate }) => {
+const ExpenseForm = ({ expense, onSubmit, isUpdate, userCategories = [] }) => {
   const [amount, setAmount] = useState(expense?.amount || "");
   const [category, setCategory] = useState(expense?.type || "");
   const [title, setTitle] = useState(expense?.title || "");
   const [description, setDescription] = useState(expense?.description || "");
+
+  const combinedCategories = [...expenseTypes, ...userCategories];
+
 
   useEffect(() => {
     if (expense) {
@@ -54,14 +57,18 @@ const ExpenseForm = ({ expense, onSubmit, isUpdate }) => {
       <Text style={styles.label}>Categoría</Text>
       <Picker
         selectedValue={category}
-        style={styles.picker}
         onValueChange={(itemValue) => setCategory(itemValue)}
+        style={styles.picker}
       >
-        <Picker.Item label="Seleccione una categoría" value="" />
-        {expenseTypes.map((type) => (
-          <Picker.Item key={type.id} label={type.name} value={type.name} />
+        {combinedCategories.map((category) => (
+          <Picker.Item
+            key={category.id}
+            label={category.name}
+            value={category.name}
+          />
         ))}
       </Picker>
+
 
       <Text style={styles.label}>Título</Text>
       <TextInput
