@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Alert } from "react-native";
-import { doc, getFirestore, setDoc } from "firebase/firestore";
+import { doc, getFirestore, setDoc, collection, query, getDocs, where } from "firebase/firestore";
 import ExpenseForm from "../../components/ExpenseForm";
 import { getAuth } from "firebase/auth";
 import { app } from "../../utils/firebase";
-import { fetchUserCategories } from "../../utils/firebaseUtils"; // Función para obtener las categorías del usuario
-import { fetchAvailableLimit } from "../../utils/firebaseUtils";
-
+import { fetchUserCategories } from "../../utils/firebaseUtils"; // Obtener categorías del usuario
 
 const CreateExpenseScreen = ({ navigation }) => {
   const [userCategories, setUserCategories] = useState([]);
@@ -15,7 +13,7 @@ const CreateExpenseScreen = ({ navigation }) => {
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const categories = await fetchUserCategories(); // Obtener categorías del usuario desde Firestore
+        const categories = await fetchUserCategories();
         setUserCategories(categories);
       } catch (error) {
         console.error("Error al cargar las categorías del usuario:", error);
@@ -49,30 +47,74 @@ const CreateExpenseScreen = ({ navigation }) => {
     return true;
   };
 
+  const fetchTotals = async () => {
+    const db = getFirestore(app);
+    const userId = getAuth().currentUser?.uid;
+    if (!userId) throw new Error("Usuario no autenticado");
+
+    // Obtener ingresos totales
+    const incomeQuery = query(
+      collection(db, "ingresos"),
+      where("user_id", "==", userId)
+    );
+    const incomeSnapshot = await getDocs(incomeQuery);
+    const totalIncome = incomeSnapshot.docs.reduce(
+      (sum, doc) => sum + doc.data().amount,
+      0
+    );
+
+    // Obtener gastos totales
+    const expenseQuery = query(
+      collection(db, "gastos"),
+      where("user_id", "==", userId)
+    );
+    const expenseSnapshot = await getDocs(expenseQuery);
+    const totalExpenses = expenseSnapshot.docs.reduce(
+      (sum, doc) => sum + doc.data().amount,
+      0
+    );
+
+    return { totalIncome, totalExpenses };
+  };
+
   const handleCreateExpense = async (expenseData) => {
     if (!validateFormData(expenseData)) return;
 
     try {
-
-      const userId = getAuth().currentUser?.uid; // Obtener el ID del usuario
+      const db = getFirestore(app);
+      const userId = getAuth().currentUser?.uid;
       if (!userId) {
         Alert.alert("Error", "Usuario no autenticado.");
         return;
       }
-  
 
-      const db = getFirestore(app);
+      // Obtener los totales de ingresos y gastos
+      const { totalIncome, totalExpenses } = await fetchTotals();
+
+      // Sumar el gasto que se quiere agregar al total de gastos
+      const projectedTotalExpenses = totalExpenses + expenseData.amount;
+
+      // Validar si la suma supera los ingresos
+      if (projectedTotalExpenses > totalIncome) {
+        Alert.alert(
+          "Límite excedido",
+          "El gasto, sumado a tus gastos actuales, excede el total de ingresos disponibles. Agrega un ingreso primero."
+        );
+        return;
+      }
+
+      // Crear el gasto
       const expenseRef = doc(db, "gastos", `${userId}_${Date.now()}`);
       await setDoc(expenseRef, {
         amount: expenseData.amount,
         type: expenseData.type,
         title: expenseData.title,
         description: expenseData.description,
-        user_id: getAuth().currentUser.uid,
+        user_id: userId,
         created_at: new Date(),
       });
 
-      console.log("Gasto creado con éxito.");
+      Alert.alert("Éxito", "Gasto creado correctamente.");
       navigation.goBack();
     } catch (error) {
       console.error("Error al crear el gasto:", error);
