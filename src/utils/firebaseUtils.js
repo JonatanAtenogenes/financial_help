@@ -12,6 +12,41 @@ import { doc, deleteDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "../utils/firebase"; // Asegúrate de importar correctamente
 
 
+export const subscribeToLimit = (callback) => {
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Usuario no autenticado");
+
+  const incomeQuery = query(
+    collection(db, "ingresos"),
+    where("user_id", "==", userId)
+  );
+  const expenseQuery = query(
+    collection(db, "gastos"),
+    where("user_id", "==", userId)
+  );
+
+  const unsubscribeIncome = onSnapshot(incomeQuery, (incomeSnapshot) => {
+    const totalIncome = incomeSnapshot.docs.reduce(
+      (sum, doc) => sum + doc.data().amount,
+      0
+    );
+
+    const unsubscribeExpenses = onSnapshot(expenseQuery, (expenseSnapshot) => {
+      const totalExpenses = expenseSnapshot.docs.reduce(
+        (sum, doc) => sum + doc.data().amount,
+        0
+      );
+
+      callback(totalIncome - totalExpenses);
+    });
+
+    return () => {
+      unsubscribeIncome();
+      unsubscribeExpenses();
+    };
+  });
+};
+
 
 export const fetchExpenses = async () => {
   const db = getFirestore(app);

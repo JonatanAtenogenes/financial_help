@@ -5,6 +5,8 @@ import ExpenseForm from "../../components/ExpenseForm";
 import { getAuth } from "firebase/auth";
 import { app } from "../../utils/firebase";
 import { fetchUserCategories } from "../../utils/firebaseUtils"; // Función para obtener las categorías del usuario
+import { fetchAvailableLimit } from "../../utils/firebaseUtils";
+
 
 const CreateExpenseScreen = ({ navigation }) => {
   const [userCategories, setUserCategories] = useState([]);
@@ -51,8 +53,15 @@ const CreateExpenseScreen = ({ navigation }) => {
     if (!validateFormData(expenseData)) return;
 
     try {
+
+      const userId = getAuth().currentUser?.uid; // Obtener el ID del usuario
+      if (!userId) {
+        Alert.alert("Error", "Usuario no autenticado.");
+        return;
+      }
+  
+
       const db = getFirestore(app);
-      const userId = getAuth().currentUser.uid;
       const expenseRef = doc(db, "gastos", `${userId}_${Date.now()}`);
       await setDoc(expenseRef, {
         amount: expenseData.amount,
